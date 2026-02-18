@@ -1,5 +1,7 @@
 import os
 import csv
+import pandas as pd
+from sklearn.linear_model import LinearRegression
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -13,6 +15,7 @@ class Student:
     def __str__(self):
         return f'Student ID: {self.id}\nStudent name: {self.name}'
 
+    # Update add_grade to accept 'study_hours'.
     def add_grade(self, subject, score, credits):
             self.grades.append({
                 'Subject' : subject,
@@ -101,7 +104,10 @@ class StudentSystem:
             self.search_by_id(id).add_grade(subject, score, credits)
 
     def get_student_info(self):
-        while True:
+        while True: 
+            # REVIEW: Break the loop - It should only return the ID and Name.
+            # Currently, it contains a 'while True' loop that never breaks, 
+            # meaning the user is stuck here forever after entering a name.
             try:
                 student_id = int(input('Enter your Id\n-> '))
                 if not student_id > 0:
@@ -120,6 +126,9 @@ class StudentSystem:
                 print("Invalid input. (Only letters)")
         return student_id, student_name
     
+        # REVIEW: Return these values instead of creating the student here.
+        # Creating the student here AND in main() causes the "ID already exists" crash.
+
     def search_by_id(self, id):
         if id not in self.students.keys():
             return None
@@ -182,6 +191,43 @@ class StudentSystem:
                     print(f'{student_grade['Subject']} ({letter})')
             print('-'*20)
 
+# # Requires: import pandas as pd, from sklearn.linear_model import LinearRegression
+#     def predict_score(self):
+#         import pandas as pd
+#         from sklearn.linear_model import LinearRegression
+#         import numpy as np
+
+#         # Load data into a DataFrame
+#         try:
+#             df = pd.read_csv(self.filename)
+#         except FileNotFoundError:
+#             print("No data found.")
+#             return
+
+#         if 'StudyHours' not in df.columns:
+#             print("Error: Old data format. Please add grades with Study Hours first.")
+#             return
+        
+#         # We need at least a few records to train
+#         if len(df) < 5:
+#             print("Not enough data to train AI (Need 5+ records).")
+#             return
+
+#         # Training
+#         X = df[['StudyHours']]
+#         y = df['Score']
+        
+#         model = LinearRegression()
+#         model.fit(X, y)
+
+#         # Prediction
+#         try:
+#             hours = float(input("How many hours will you study? "))
+#             prediction = model.predict([[hours]])
+#             print(f"Predicted Score: {prediction[0]:.2f}")
+#         except ValueError:
+#             print("Invalid number.")
+
 
 def main():
     system = StudentSystem()
@@ -198,6 +244,10 @@ def main():
             except ValueError:
                     print('Please enter a number (0-5)')
 
+        #Tip: Infinite Loop 
+        # You are calling system.get_student_info(). 
+        # Inside get_student_info, there is another infinite loop (while True) that asks for inputs, 
+        # creates a student, adds it to the list, and never breaks.
         if choice == '1':
             id , name = system.get_student_info() 
             student = Student(id, name)
@@ -219,6 +269,13 @@ def main():
                     except ValueError:
                         print('Please enter a number')
                 
+                # The loop for num in range(subject_num): asks for inputs (subject, score, credits), creates the variables, 
+                # but calls system.add_grade outside the loop (indentation error in the last line of that block).
+                # If a user says they want to add 3 subjects, they will type all 3, but only the last one will actually get saved. 
+                # The system.add_grade call needs to be indented to be inside the loop.
+                #Solution: 
+                # Remove the while True loop inside that method, or make sure it returns the values so main() can use them.
+
                 for num in range(subject_num):
                     print(f'----Subject number ({num + 1})----')
                     student_subject = input('Subject name\n-> ').title()
@@ -240,6 +297,10 @@ def main():
                         except:
                             print('Invalid input. credit cannot be zero')
                     clear_screen()
+                    # REVIEW: CRITICAL BUG BELOW
+                    # The following two lines are outside the 'for' loop indentation.
+                    # This means if I enter 3 subjects, only the LAST one gets saved.
+                    # Indent these lines so they are inside the loop.
                     system.add_grade(student_id, student_subject, student_score, student_credits)
                     system.save_data()
         
@@ -256,9 +317,12 @@ def main():
             system.view_records()
         
         elif choice == '5':
-            # محتاج مساعدة
-            pass 
-    
+            system.predict_score()
+            # TODO: Phase 3 Requirement Missing
+            # 1. Update add_grade to accept 'study_hours'.
+            # 2. Implement Linear Regression here using scikit-learn.
+            # 3. Predict the score based on user input.
+            
         elif choice == '0':
             break
 
